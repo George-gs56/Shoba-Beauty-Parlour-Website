@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Scissors, Star, Palette, Clock, DollarSign, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Sparkles, Scissors, Star, Palette, Clock, Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import styles from "./Services.module.css";
 
 interface ServiceItem {
@@ -17,6 +17,26 @@ interface ServiceItem {
 
 export default function Services() {
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [activeIndex, setActiveIndex] = useState<number>(0);
+  const [cardWidth, setCardWidth] = useState(380);
+  const [gap, setGap] = useState(30);
+  const [windowWidth, setWindowWidth] = useState(1200);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+      if (window.innerWidth < 768) {
+        setCardWidth(290);
+        setGap(15);
+      } else {
+        setCardWidth(380);
+        setGap(30);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const categories = [
     { id: "all", label: "All Services" },
@@ -141,8 +161,29 @@ export default function Services() {
     ? services
     : services.filter(service => service.category === activeTab);
 
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    setActiveIndex(0);
+  };
+
+  const handlePrev = () => {
+    setActiveIndex((prev) => (prev - 1 + filteredServices.length) % filteredServices.length);
+  };
+
+  const handleNext = () => {
+    setActiveIndex((prev) => (prev + 1) % filteredServices.length);
+  };
+
+  // Center offset calculations
+  const centerOffset = windowWidth / 2 - cardWidth / 2;
+  const offset = -activeIndex * (cardWidth + gap);
+  const xPosition = offset + centerOffset;
+
+  const leftConstraint = -((filteredServices.length - 1) * (cardWidth + gap)) + centerOffset;
+  const rightConstraint = centerOffset;
+
   return (
-    <section id="services" className="section" style={{ backgroundColor: "var(--color-bg-deep)" }}>
+    <section id="services" className="section" style={{ backgroundColor: "var(--color-bg-deep)", overflow: "hidden" }}>
       {/* Decorative Orbs */}
       <div
         className="glow-orb"
@@ -155,7 +196,7 @@ export default function Services() {
         }}
       />
 
-      <div className="container">
+      <div className="container" style={{ position: "relative" }}>
         {/* Title */}
         <div className="luxury-title-container text-center">
           <span className="luxury-subtitle">Our Expertise</span>
@@ -173,7 +214,7 @@ export default function Services() {
             <button
               key={cat.id}
               className={`${styles.tabBtn} ${activeTab === cat.id ? styles.activeTab : ""}`}
-              onClick={() => setActiveTab(cat.id)}
+              onClick={() => handleTabChange(cat.id)}
             >
               {cat.label}
               {activeTab === cat.id && (
@@ -187,51 +228,110 @@ export default function Services() {
           ))}
         </div>
 
-        {/* Services Grid with Layout Animations */}
-        <motion.div className={styles.servicesGrid} layout>
-          <AnimatePresence mode="popLayout">
-            {filteredServices.map((service, index) => (
+        {/* Services Swipeable Peak Carousel */}
+        {filteredServices.length > 0 && (
+          <div className={styles.carouselWrapper}>
+            <button
+              onClick={handlePrev}
+              className={styles.navArrow}
+              aria-label="Previous service"
+            >
+              <ChevronLeft size={24} />
+            </button>
+
+            <div className={styles.carouselViewport}>
               <motion.div
-                key={service.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.4, delay: index * 0.04 }}
-                className={`${styles.serviceCard} glass-card`}
+                className={styles.carouselTrack}
+                drag="x"
+                dragConstraints={{
+                  left: leftConstraint,
+                  right: rightConstraint
+                }}
+                dragElastic={0.25}
+                onDragEnd={(e, info) => {
+                  const swipeThreshold = 50;
+                  const swipe = info.offset.x;
+                  const velocity = info.velocity.x;
+
+                  if (swipe < -swipeThreshold || velocity < -500) {
+                    setActiveIndex((prev) => (prev + 1) % filteredServices.length);
+                  } else if (swipe > swipeThreshold || velocity > 500) {
+                    setActiveIndex((prev) => (prev - 1 + filteredServices.length) % filteredServices.length);
+                  }
+                }}
+                animate={{ x: xPosition }}
+                transition={{ type: "spring", stiffness: 300, damping: 28 }}
               >
-                {/* Header */}
-                <div className={styles.cardHeader}>
-                  <div className={styles.serviceIcon}>{service.icon}</div>
-                </div>
+                {filteredServices.map((service, idx) => {
+                  const isCenter = idx === activeIndex;
+                  return (
+                    <motion.div
+                      key={service.id}
+                      style={{ width: cardWidth, marginRight: gap, flexShrink: 0 }}
+                      animate={{
+                        scale: isCenter ? 1.0 : 0.85,
+                        opacity: isCenter ? 1.0 : 0.4,
+                      }}
+                      transition={{ duration: 0.4 }}
+                      className={`${styles.serviceCard} glass-card`}
+                    >
+                      {/* Header */}
+                      <div className={styles.cardHeader}>
+                        <div className={styles.serviceIcon}>{service.icon}</div>
+                      </div>
 
-                {/* Details */}
-                <h3 className={styles.serviceName}>{service.name}</h3>
+                      {/* Details */}
+                      <h3 className={styles.serviceName}>{service.name}</h3>
 
-                <div className={styles.metaInfo}>
-                  <Clock size={14} className={styles.metaIcon} />
-                  <span>{service.duration}</span>
-                </div>
+                      <div className={styles.metaInfo}>
+                        <Clock size={14} className={styles.metaIcon} />
+                        <span>{service.duration}</span>
+                      </div>
 
-                <p className={styles.serviceDesc}>{service.description}</p>
+                      <p className={styles.serviceDesc}>{service.description}</p>
 
-                {/* Micro Features */}
-                <div className={styles.features}>
-                  {service.features.map((feat, idx) => (
-                    <span key={idx} className={styles.featureBadge}>
-                      • {feat}
-                    </span>
-                  ))}
-                </div>
+                      {/* Micro Features */}
+                      <div className={styles.features}>
+                        {service.features.map((feat, fIdx) => (
+                          <span key={fIdx} className={styles.featureBadge}>
+                            • {feat}
+                          </span>
+                        ))}
+                      </div>
 
-                {/* CTA inside Card */}
-                <a href="#booking" className={styles.cardLink}>
-                  Book Now
-                </a>
+                      {/* CTA inside Card */}
+                      <a href="#booking" className={styles.cardLink}>
+                        Book Now
+                      </a>
+                    </motion.div>
+                  );
+                })}
               </motion.div>
+            </div>
+
+            <button
+              onClick={handleNext}
+              className={styles.navArrow}
+              aria-label="Next service"
+            >
+              <ChevronRight size={24} />
+            </button>
+          </div>
+        )}
+
+        {/* Carousel Indicators/Dots */}
+        {filteredServices.length > 1 && (
+          <div className={styles.indicators}>
+            {filteredServices.map((_, idx) => (
+              <button
+                key={idx}
+                className={`${styles.indicatorDot} ${idx === activeIndex ? styles.activeDot : ""}`}
+                onClick={() => setActiveIndex(idx)}
+                aria-label={`Go to service ${idx + 1}`}
+              />
             ))}
-          </AnimatePresence>
-        </motion.div>
+          </div>
+        )}
       </div>
     </section>
   );

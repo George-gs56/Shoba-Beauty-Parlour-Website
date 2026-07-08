@@ -71,13 +71,19 @@ export default function Booking() {
       />
 
       <div className="container">
-        {/* Title */}
-        <div className="luxury-title-container text-center">
+        {/* Title with scroll reveal */}
+        <motion.div
+          className="luxury-title-container text-center"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+        >
           <span className="luxury-subtitle">Reservations</span>
           <h2 className="luxury-title">
             Book Your <span>Experience.</span>
           </h2>
-        </div>
+        </motion.div>
 
         <div className={styles.bookingWrapper}>
           <AnimatePresence mode="wait">
@@ -86,10 +92,11 @@ export default function Booking() {
                 key="booking-form"
                 className={`${styles.bookingForm} glass-card`}
                 onSubmit={handleSubmit}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
                 exit={{ opacity: 0, y: -30 }}
-                transition={{ duration: 0.6 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
               >
                 <div className={styles.formGrid}>
                   {/* Name */}

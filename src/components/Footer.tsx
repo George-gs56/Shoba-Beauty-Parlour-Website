@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUp, Instagram, Facebook, Compass, Youtube } from "lucide-react";
+import { ArrowUp, Instagram, Facebook, Youtube } from "lucide-react";
 import styles from "./Footer.module.css";
 
 export default function Footer() {

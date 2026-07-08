@@ -53,7 +53,7 @@ export default function MakeupGallery() {
   const trackRef = useRef<HTMLDivElement>(null);
 
   return (
-    <section className={styles.gallerySection}>
+    <section id="makeupgallery" className={styles.gallerySection}>
       <div className={styles.sectionHeader}>
         <span className="luxury-subtitle">Portfolio</span>
         <h2 className="luxury-title">

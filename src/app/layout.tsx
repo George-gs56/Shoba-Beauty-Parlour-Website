@@ -22,6 +22,8 @@ export const metadata: Metadata = {
   authors: [{ name: "Shoba Beauty Parlour Team" }],
 };
 
+import CustomCursor from "@/components/CustomCursor";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,6 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${montserrat.variable}`}>
       <body>
+        <CustomCursor />
         {children}
       </body>
     </html>

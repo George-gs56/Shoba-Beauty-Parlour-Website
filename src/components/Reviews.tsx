@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import styles from "./Reviews.module.css";
 
 const reviews = [
@@ -77,11 +78,86 @@ const reviews = [
     service: "Airbrush Bridal Makeup",
     avatar: "GB",
   },
+  {
+    id: 9,
+    name: "Soundarya Rajesh",
+    location: "Madurai, Tamil Nadu",
+    rating: 5,
+    text: "Enakkaga romba beautiful-ah bridal makeup panni kuduthanga. Ellarume enna romba paaratunanga. Shoba beauty parlour thaan best!",
+    service: "Traditional Bridal Makeup",
+    avatar: "SR",
+  },
+  {
+    id: 10,
+    name: "Pooja Srinivasan",
+    location: "Chennai, Tamil Nadu",
+    rating: 5,
+    text: "Sariyo thappo en skin type-ah ketu, organic elixirs use panni super-ah styling pannanga. Service romba professional-ah irundhathu!",
+    service: "Airbrush Bridal Makeup",
+    avatar: "PS",
+  },
+  {
+    id: 11,
+    name: "Janani Karthik",
+    location: "Coimbatore, Tamil Nadu",
+    rating: 5,
+    text: "My engagement makeup was absolutely gorgeous. Makeup natural-ah irundhuchu, heavy-ah theriyala. Thank you so much team Shoba!",
+    service: "Engagement & Roka Makeup",
+    avatar: "JK",
+  },
 ];
 
 export default function Reviews() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [itemsToShow, setItemsToShow] = useState(3);
+  const [cardWidth, setCardWidth] = useState(340);
+  const [gap, setGap] = useState(24);
+  const [windowWidth, setWindowWidth] = useState(1200);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+      if (window.innerWidth < 640) {
+        setItemsToShow(1);
+        setCardWidth(290);
+        setGap(15);
+      } else if (window.innerWidth < 1024) {
+        setItemsToShow(2);
+        setCardWidth(340);
+        setGap(20);
+      } else {
+        setItemsToShow(3);
+        setCardWidth(340);
+        setGap(24);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const maxIndex = Math.max(0, reviews.length - itemsToShow);
+  const safeIndex = Math.min(activeIndex, maxIndex);
+
+  const handlePrev = () => {
+    setActiveIndex((prev) => (prev === 0 ? maxIndex : prev - 1));
+  };
+
+  const handleNext = () => {
+    setActiveIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+  };
+
+  // Peeking calculations
+  const blockWidth = itemsToShow * cardWidth + (itemsToShow - 1) * gap;
+  const centerOffset = windowWidth / 2 - blockWidth / 2;
+  const offset = -safeIndex * (cardWidth + gap);
+  const xPosition = offset + centerOffset;
+
+  const leftConstraint = -(maxIndex * (cardWidth + gap)) + centerOffset;
+  const rightConstraint = centerOffset;
+
   return (
-    <section id="reviews" className="section" style={{ backgroundColor: "var(--color-bg-deep)" }}>
+    <section id="reviews" className="section" style={{ backgroundColor: "var(--color-bg-deep)", overflow: "hidden" }}>
       <div
         className="glow-orb"
         style={{
@@ -93,51 +169,118 @@ export default function Reviews() {
         }}
       />
 
-      <div className="container">
-        <div className="luxury-title-container text-center">
-          <span className="luxury-subtitle">Client Stories</span>
-          <h2 className="luxury-title">
-            Real <span>Reviews.</span>
-          </h2>
-          <p style={{ color: "var(--color-text-secondary)", maxWidth: "520px", margin: "12px auto 0" }}>
-            From Tamil Nadu brides and professionals — authentic experiences at Shoba Beauty Parlour.
-          </p>
+      <div className="container" style={{ position: "relative" }}>
+        {/* Header without navigation controls */}
+        <div className={styles.sectionHeader}>
+          <div className="luxury-title-container" style={{ marginBottom: 0 }}>
+            <span className="luxury-subtitle">Client Stories</span>
+            <h2 className="luxury-title">
+              Real <span>Reviews.</span>
+            </h2>
+            <p style={{ color: "var(--color-text-secondary)", maxWidth: "520px", marginTop: "12px" }}>
+              From Tamil Nadu brides and professionals — authentic experiences at Shoba Beauty Parlour.
+            </p>
+          </div>
         </div>
 
-        <div className={styles.reviewsGrid}>
-          {reviews.map((review, idx) => (
+        {/* Carousel Viewport with overlays */}
+        <div className={styles.carouselWrapper}>
+          <button
+            onClick={handlePrev}
+            className={styles.navArrow}
+            aria-label="Previous reviews"
+          >
+            <ChevronLeft size={22} />
+          </button>
+
+          <div className={styles.carouselViewport}>
             <motion.div
-              key={review.id}
-              className={`${styles.reviewCard} glass-card`}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.6, delay: idx * 0.07 }}
+              className={styles.carouselTrack}
+              drag="x"
+              dragConstraints={{
+                left: leftConstraint,
+                right: rightConstraint
+              }}
+              dragElastic={0.25}
+              onDragEnd={(e, info) => {
+                const swipeThreshold = 50;
+                const swipe = info.offset.x;
+                const velocity = info.velocity.x;
+
+                if (swipe < -swipeThreshold || velocity < -500) {
+                  setActiveIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+                } else if (swipe > swipeThreshold || velocity > 500) {
+                  setActiveIndex((prev) => (prev === 0 ? maxIndex : prev - 1));
+                }
+              }}
+              animate={{ x: xPosition }}
+              transition={{ type: "spring", stiffness: 300, damping: 28 }}
             >
-              {/* Stars */}
-              <div className={styles.stars}>
-                {Array.from({ length: review.rating }).map((_, i) => (
-                  <Star key={i} size={14} fill="var(--color-gold)" color="var(--color-gold)" />
-                ))}
-              </div>
+              {reviews.map((review, idx) => {
+                // Visible check
+                const isVisible = idx >= safeIndex && idx < safeIndex + itemsToShow;
+                return (
+                  <motion.div
+                    key={review.id}
+                    className={styles.carouselCardWrapper}
+                    style={{ width: cardWidth, marginRight: gap, flexShrink: 0 }}
+                    animate={{
+                      scale: isVisible ? 1.0 : 0.88,
+                      opacity: isVisible ? 1.0 : 0.4,
+                    }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <div className={`${styles.reviewCard} glass-card`} style={{ height: "100%" }}>
+                      {/* Stars */}
+                      <div className={styles.stars}>
+                        {Array.from({ length: review.rating }).map((_, i) => (
+                          <Star key={i} size={14} fill="var(--color-gold)" color="var(--color-gold)" />
+                        ))}
+                      </div>
 
-              {/* Review Text */}
-              <p className={styles.reviewText}>&ldquo;{review.text}&rdquo;</p>
+                      {/* Review Text */}
+                      <p className={styles.reviewText}>&ldquo;{review.text}&rdquo;</p>
 
-              {/* Service Badge */}
-              <span className={styles.serviceBadge}>{review.service}</span>
+                      {/* Service Badge */}
+                      <span className={styles.serviceBadge}>{review.service}</span>
 
-              {/* Reviewer Info */}
-              <div className={styles.reviewer}>
-                <div className={styles.avatar}>{review.avatar}</div>
-                <div>
-                  <span className={styles.reviewerName}>{review.name}</span>
-                  <span className={styles.reviewerLocation}>{review.location}</span>
-                </div>
-              </div>
+                      {/* Reviewer Info */}
+                      <div className={styles.reviewer}>
+                        <div className={styles.avatar}>{review.avatar}</div>
+                        <div>
+                          <span className={styles.reviewerName}>{review.name}</span>
+                          <span className={styles.reviewerLocation}>{review.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </motion.div>
-          ))}
+          </div>
+
+          <button
+            onClick={handleNext}
+            className={styles.navArrow}
+            aria-label="Next reviews"
+          >
+            <ChevronRight size={22} />
+          </button>
         </div>
+
+        {/* Pagination indicator dots */}
+        {maxIndex > 0 && (
+          <div className={styles.dotsContainer}>
+            {Array.from({ length: maxIndex + 1 }).map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveIndex(idx)}
+                className={`${styles.dot} ${idx === safeIndex ? styles.activeDot : ""}`}
+                aria-label={`Go to reviews slide ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
