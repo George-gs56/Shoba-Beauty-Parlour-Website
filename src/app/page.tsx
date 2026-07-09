@@ -6,10 +6,14 @@ import MakeupGallery from "@/components/MakeupGallery";
 import Reviews from "@/components/Reviews";
 import Booking from "@/components/Booking";
 import Footer from "@/components/Footer";
+import ThreeBackgroundWrapper from "@/components/ThreeBackgroundWrapper";
 
 export default function Home() {
   return (
     <div style={{ position: "relative", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
+      {/* Three.js Global Background Animation */}
+      <ThreeBackgroundWrapper />
+
       {/* Dynamic Header */}
       <Navbar />
 

@@ -11,7 +11,6 @@ export default function Footer() {
 
   return (
     <footer className={styles.footer}>
-      <div className="container">
         <div className={styles.footerGrid}>
           {/* Column 1: Brand Info */}
           <div className={styles.footerBrand}>
@@ -85,7 +84,6 @@ export default function Footer() {
             <ArrowUp size={18} />
           </motion.button>
         </div>
-      </div>
     </footer>
   );
 }
